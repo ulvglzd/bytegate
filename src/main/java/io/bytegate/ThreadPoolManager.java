@@ -3,8 +3,10 @@ package io.bytegate;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadPoolManager {
 
@@ -20,7 +22,19 @@ public class ThreadPoolManager {
                 Math.min(poolSize, DEFAULT_POOL_SIZE),
                 MAX_POOL_SIZE, KEEP_ALIVE_TIME,
                 TimeUnit.SECONDS,
-                new ArrayBlockingQueue<>(DEFAULT_QUEUE_SIZE));
+                new ArrayBlockingQueue<>(DEFAULT_QUEUE_SIZE),
+                initThreadFactory()
+        );
+
+    }
+
+    private static ThreadFactory initThreadFactory() {
+        AtomicInteger counter = new AtomicInteger(1);
+        return r -> {
+            Thread t = new Thread(r);
+            t.setName("bytegate-worker-" + counter.getAndIncrement());
+            return t;
+        };
     }
 
     public static ThreadPoolManager create(int poolSize) {
